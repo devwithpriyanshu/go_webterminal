@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Terminal</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css">
+</head>
+<body>
+    <div id="terminal"></div>
+    <script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit/lib/xterm-addon-fit.min.js"></script>
+    <script>
+        const term = new Terminal();
+
+        const terminalContainer = document.getElementById('terminal');
+        term.open(terminalContainer);
+
+        const wss = new WebSocket('ws://localhost:5555/ws');
+
+        wss.onopen = () => {
+            console.log('Connected to backend');
+            term.write('Connected to the server...\r\n');
+        };
+
+        wss.onmessage = (event) => {
+            const message = JSON.parse(event.data);
+            if (message.type === 'data') {
+                term.write(message.data);
+            }
+        };
+
+        wss.onclose = () => {
+            term.write('\r\nDisconnected from server.\r\n');
+        };
+
+        term.onData((input) => {
+            const message = { type: 'command', data: input };
+            wss.send(JSON.stringify(message));
+        });
+    </script>
+</body>
+</html>
